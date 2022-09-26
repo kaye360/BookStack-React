@@ -1,5 +1,3 @@
-// TODO
-// CSS
 
 import { useState, useMemo } from 'react';
 import debounce from 'lodash.debounce'
