@@ -1,3 +1,5 @@
+// TODO
+// CSS
 
 import { useState, useMemo } from 'react';
 import debounce from 'lodash.debounce'
@@ -75,6 +77,12 @@ function App() {
   let [library, setLibrary] = useState(getLocalStorageBookStack)
   library = applyUserOptions(sortMethod, readFilter, library)
 
+
+  let totalPages = 0
+
+  library.forEach( (book) => {
+        totalPages += book[1].pages
+  } )
   
 
   // ---------- ---------- ---------- ----------
@@ -295,9 +303,7 @@ const debounceHandleSearch = useMemo(
                         <td>Author</td>
                         <td>Pages</td>
                         <td>Read?</td>
-                        <td>Date</td>
-                        <td>ISBN</td>
-                        <td></td>
+                        <td>User Actions</td>
                     </tr>
                 </thead>
 
@@ -334,8 +340,8 @@ const debounceHandleSearch = useMemo(
 
 
     <footer className='container'>
-
-      Made By Josh =) with React
+        You have { totalPages } total pages in your library<br />
+        Made By Josh =) with React
     </footer>
 
 

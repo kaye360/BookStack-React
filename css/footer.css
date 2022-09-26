@@ -1,0 +1,6 @@
+footer {
+    margin-top : 3rem;
+    padding-block : 4rem;
+    background-color: var(--clr-primary-dark);
+    color : var(--clr-primary-light);
+}

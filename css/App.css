@@ -1,0 +1,41 @@
+@import url('https://fonts.googleapis.com/css2?family=Joan&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter&display=swap');
+
+* {
+    margin : 0;
+    padding : 0;
+    box-sizing : border-box;
+}
+
+:root {
+    --clr-primary-light: #e5f5ff;
+    --clr-primary-med: #61a6d4;
+    --clr-primary: #155e8f;
+    --clr-primary-dark: #0b3a5a;
+    --clr-message-bg : #0b3a5acc;
+
+    --font-heading : Joan, serif;
+    --font-main : Inter, sans-serif;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+input, button {
+    margin : 0.4rem;
+}
+
+button {
+    background : none;
+    border : 0;
+    cursor : pointer;
+}
+
+
+
+@import url(footer.css);
+@import url(layout.css);
+@import url(library.css);
+@import url(navbar.css);
+@import url(utils.css);

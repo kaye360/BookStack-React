@@ -1,0 +1,38 @@
+.message-wrapper {
+    position: fixed;
+    inset : 0;
+    z-index : 10;
+    display : grid;
+    place-items: center;
+    background-color: var(--clr-message-bg);
+}
+
+.success-message,
+.error-message {
+    width : 50%;
+    padding : 3rem;
+
+    display : flex;
+    align-items: center;
+    gap : 1rem;
+    
+    border-radius: 1rem;
+    background-color: #fff;
+}
+
+.close-message {
+    margin : 1rem 0 0 0;
+    padding : 0.5rem 1rem;
+
+    border : 1px solid var(--clr-primary);
+    cursor : pointer;
+}
+
+.fade-out { 
+    animation : fade-out 5s ease-in-out;
+}
+
+@keyframes fade-out {
+    80% { opacity: 1; }
+    100% {opacity: 0.2;}
+}

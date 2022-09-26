@@ -1,3 +1,5 @@
+import RatingStars from "./RatingStars"
+
 
 function BookInfo(props) {
 
@@ -28,14 +30,15 @@ function BookInfo(props) {
 
                 <img src={ imageURL } alt="Book Cover" className="more-info-cover mb2" />
 
-                <h4>Rating: { rating }</h4>
-                <span> { ratingCount } total votes</span>
-                {/* ${ratingStars} */}
+                <RatingStars rating={rating} />
+
+                <span> { !ratingCount ? 0 : ratingCount } total votes</span>
+                
             </div>
 
             <div className="more-info-right">
                 <p className="mb2">
-                    <span className="more-info-category">Topic: { topic }</span>
+                    <span className="more-info-category">Topic: { topic }</span><br />
                     <span className="more-info-pages">{ pages } pages</span>
                 </p>
 
@@ -45,19 +48,20 @@ function BookInfo(props) {
                 </p>
 
                 <p className="mb2">
-                    { datePublished }
+                    Published on { datePublished }
                 </p>
+
             </div>
 
-            <button 
-                className="close-more-info"
-                onClick={ () => {
-                    props.setPopupBook(false)
-                    props.setCurrentPopupBook(false)
-                }}
-            >
-                Close
-            </button>
+                <button 
+                    className="close-more-info"
+                    onClick={ () => {
+                        props.setPopupBook(false)
+                        props.setCurrentPopupBook(false)
+                    }}
+                >
+                    Close
+                </button>
 
         </div>
 
