@@ -36,7 +36,7 @@ function AddBookMsg(props) {
 
                     <br />
 
-                    <button onClick={ () => { props.setNewBookAdded(false) } } class="close-message">Close</button>
+                    <button onClick={ () => { props.setNewBookAdded(false) } } className="close-message">Close</button>
 
                 </div>
 

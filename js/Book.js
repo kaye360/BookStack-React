@@ -1,48 +1,51 @@
-import { deleteBook, getBooks, getGoogleBookInfo } from "./utils"
+import { getGoogleBookInfo } from "./utils"
 import * as IMG from '../img'
 import '../css/Book.css'
 
 
 
 
-function Book({ bookData, display, readStatus, setLibrary, setPopupBook, setCurrentPopupBook}) {
+function Book({ bookData, display, library, setLibrary, setBookInfoModalISBN, setBookInfoModalData}) {
+
+    const {title, author, pages, read, isbn, image, id} = {...bookData}
+    const bookImg = (image === false) ? IMG.imgNotAvailable : image 
 
 
-    const {title, author, pages, isbn, image} = {...bookData[1]}
-    const id = bookData[0]
-    const bookImg = (image === '#') ? IMG.imgNotAvailable : image 
 
 
+    function deleteBook(id) {
+
+        let updatedLibrary = [...library].filter( book => book.id !== id )
+
+        setLibrary(updatedLibrary)
+}
 
 
 
     async function handleMoreInfo(isbn) {
         const bookInfo = await getGoogleBookInfo(isbn)
-    
-   
-        setCurrentPopupBook( bookInfo )
-        setPopupBook( isbn )
+        
+        
+        setBookInfoModalData( bookInfo )
+        setBookInfoModalISBN( isbn )
     }
 
 
 
 
 
-    function toggleReadStatus(id, readStatus) {
-        // console.log(id, readStatus, library)
+    function toggleReadStatus(id) {
 
-        let library = getBooks()
+        const updatedLibrary = [...library]
 
-        const book = library.findIndex( (current, index) => {
-            return library[index][0] === id
+        const book = updatedLibrary.findIndex( (current, index) => {
+            return updatedLibrary[index].id === id
         })
 
-        library[book][1].read = library[book][1].read ? false : true
+        updatedLibrary[book].read = !updatedLibrary[book].read
 
-        const libraryObj = Object.fromEntries(library)
 
-        localStorage.setItem('bookstack', JSON.stringify(libraryObj))
-        setLibrary(library)
+        setLibrary(updatedLibrary)
     }
     
 
@@ -69,26 +72,19 @@ function Book({ bookData, display, readStatus, setLibrary, setPopupBook, setCurr
     
                     <div className='book-read'>
                         Read? 
-                        <button onClick={ () => {
-                            toggleReadStatus(id, readStatus)
-                        } }>
-                        <img src={ readStatus === 'Yes' ? IMG.BookIconRead : IMG.BookIconUnread } alt="Book Read" />
+                        <button 
+                          onClick={ () => { toggleReadStatus(id) } }
+                        >
+                            <img src={ read === true ? IMG.BookIconRead : IMG.BookIconUnread } alt="Book Read" />
                         </button>
                     </div>
     
                     <div>
-                        <button className="button-delete" onClick={ () => {
-                            deleteBook( id )
-                            setLibrary( 
-                                Object.entries(
-                                    JSON.parse(localStorage.bookstack)
-                                )
-                            )
-                            }
-                        }>Delete</button>
-                    </div>
+                        <button 
+                          className="button-delete mr1" 
+                          onClick={ () => { deleteBook( id ) }
+                        }> Delete</button>
 
-                    <div>
                         <button className="button-more-info" onClick={ () => {
                             handleMoreInfo(isbn)
                         } }>More Info</button>
@@ -116,10 +112,10 @@ function Book({ bookData, display, readStatus, setLibrary, setPopupBook, setCurr
                 <td>{ author }</td>
                 <td className='book-pages'>{ pages }</td>
                 <td className='book read'> 
-                    <button onClick={ () => {
-                            toggleReadStatus(id, readStatus)
-                        } }>
-                        <img src={ readStatus === 'Yes' ? IMG.BookIconRead : IMG.BookIconUnread } alt="Book Read" />
+                    <button 
+                      onClick={ () => { toggleReadStatus(id) } }
+                    >
+                        <img src={ read === true ? IMG.BookIconRead : IMG.BookIconUnread } alt="Book Read" />
                     </button>
                 </td>
                 <td>
@@ -128,15 +124,10 @@ function Book({ bookData, display, readStatus, setLibrary, setPopupBook, setCurr
                     More Info
                 </button>
 
-                <button className="button-delete" onClick={ () => {
-                            deleteBook( id )
-                            setLibrary( 
-                                Object.entries(
-                                    JSON.parse(localStorage.bookstack)
-                                )
-                            )
-                            }
-                        }>Delete</button>
+                <button 
+                  className="button-delete"
+                  onClick={ () => { deleteBook( id ) }
+                }>Delete</button>
                 </td>
             </tr>
         )

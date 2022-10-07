@@ -1,4 +1,57 @@
+// Library has books
+// Check user settings
+// apply user options
+// Add Book
+// Get Google Book Info
+// Search Books
 
+
+
+export function getLibrary() {
+    return JSON.parse( localStorage.getItem('bookstack') )
+}
+
+
+
+export function updateLibrary(updatedLibrary) {
+    localStorage.setItem('bookstack', JSON.stringify(updatedLibrary) )
+}
+
+
+
+export function getViewMethod() {
+    return localStorage.getItem('viewMethod')
+}
+
+
+
+export function updateViewMethod(updatedViewMethod) {
+    localStorage.setItem('viewMethod', updatedViewMethod)
+}
+
+
+
+export function getSortMethod() {
+    return localStorage.getItem('sortMethod')
+}
+
+
+
+export function updateSortMethod(updatedSortMethod){
+    localStorage.setItem('sortMethod', updatedSortMethod)
+}
+
+
+
+export function getReadFilter() {
+    return localStorage.getItem('readFilter')
+}
+
+
+
+export function updateReadFilter(updatedReadFilter) {
+    localStorage.setItem('readFilter', updatedReadFilter)
+}
 
 
 // LIBRARY HAS BOOKS
@@ -8,17 +61,14 @@
 //
 // -----------------------
 
+
 export function libraryHasBooks(library=false) {
 
     // Check if bookstack is set in local storage
-    if ( !localStorage.getItem('bookstack') ) return false
+    if ( !getLibrary() ) return false
 
     // Check if bookstack is set in local storage but no books exist
-    if ( Object.keys(
-        JSON.parse(
-            localStorage.bookstack
-            )
-        ).length === 0
+    if ( getLibrary().length === 0
     ) return false
 
     //Check if local storage exists but library state is false (search results)
@@ -31,26 +81,6 @@ export function libraryHasBooks(library=false) {
 
 
 
-// GET BOOKS
-// -----------------------
-// 
-// Get books from local storage and return as array of objects
-//
-// -----------------------
-
-export function getBooks() {
-
-    if (!libraryHasBooks) return
-
-    let library = Object.entries(
-        JSON.parse(
-            localStorage.getItem('bookstack')
-        )
-    )
-
-    return library
-
-}
 
 
 
@@ -63,27 +93,55 @@ export function getBooks() {
 
 export function checkUserSettings() {
 
-    if(!localStorage.bookstack) {
-        const emptyLibrary = JSON.stringify({})
-        localStorage.setItem('bookstack', emptyLibrary)
-    }
+    if(!localStorage.bookstack) 
+        localStorage.setItem('bookstack', JSON.stringify([]))
 
-    if(!localStorage.readFilter) {
+    if(!localStorage.readFilter) 
         localStorage.setItem('readFilter', 'all')
-    }
     
-    if(!localStorage.sortMethod) {
+    if(!localStorage.sortMethod) 
         localStorage.setItem('sortMethod', 'title')
-    }
 
-    if(!localStorage.viewMethod) {
+    if(!localStorage.viewMethod) 
         localStorage.setItem('viewMethod', 'grid')
-    }
 
 }
 
 
+//Add Book
 
+export async function addBook(event) {
+
+    event.preventDefault()
+
+    const isbn = event.target[0].value
+    const read = (event.target[1].value === "true") ? true : false
+    const id = Math.random().toString(16).slice(2)
+    const date = new Date().valueOf()
+
+    const book = await getGoogleBookInfo(isbn)
+
+        if(!book) {
+        return 'error'
+    }
+
+    let imgLink
+    try { imgLink = book.imageLinks.thumbnail }
+    catch( error ) { imgLink = false }
+
+    const newBook = {
+            title : book.title,
+            author : book.authors[0],
+            pages : book.pageCount,
+            image : imgLink,
+            isbn : isbn,
+            read,
+            date,
+            id
+    }
+
+    return newBook
+}
 
 // GET GOOGLE BOOK INFO
 // -----------------------
@@ -108,88 +166,6 @@ export async function getGoogleBookInfo(isbn) {
 
 
 
-// ADD BOOK
-// -----------------------
-// 
-// Gather data from form, generate id's, get book info from Google Books API, add to local storage
-//
-// -----------------------
-
-
-export async function addBook() {
-
-    let event = window.event
-    event.preventDefault()
-
-    console.log(event.target[0].value)
-
-    const isbn = event.target[0].value
-    const read = (event.target[1].value === "true") ? true : false
-    const id = Math.random().toString(16).slice(2)
-    const date = new Date().valueOf()
-
-    const book = await getGoogleBookInfo(isbn)
-
-        if(!book) {
-        return 'error'
-    }
-
-    event.target[0].value = ''
-    
-    let imgLink
-    try {
-        imgLink = book.imageLinks.thumbnail
-    } catch(error) {
-        imgLink = '#'
-    }
-
-    const newBook = {
-            title : book.title,
-            author : book.authors[0],
-            pages : book.pageCount,
-            image : imgLink,
-            isbn : isbn,
-            read,
-            date
-    }
-     
-    
-    let library = {}
-    
-    if (libraryHasBooks())  library = JSON.parse(localStorage.bookstack)
-
-    library[id] = newBook
-
-    localStorage.setItem('bookstack', JSON.stringify(library))
-
-    const newBookData = {
-        id : id,
-        title : book.title
-    }
-
-    return newBookData
-}
-
-
-
-
-
-// DELETE BOOK  
-// -----------------------
-// 
-// Delete book with passed in ID in local storage
-//
-// -----------------------
-
-export function deleteBook(id) {
-
-        let library = JSON.parse(localStorage.bookstack)
-
-        delete library[id]
-
-        localStorage.setItem('bookstack', JSON.stringify(library))
-}
-
 
 
 
@@ -202,26 +178,16 @@ export function deleteBook(id) {
 
 export function searchBooks(event) {
 
-    const library = Object.entries(
-        JSON.parse(localStorage.bookstack)
-    )
-    
     let query = event.target.value.toLowerCase()
-    if (query.length === 0) return library
 
+    const localStorageLibrary = getLibrary()
+    const searchResults = localStorageLibrary.filter((book) => {
 
-    if (library.length === 0) return library
-
-
-    const searchResults = library.filter((book) => {
-
-        let bookTitle = book[1].title.toLowerCase()
-        let bookAuthor = book[1].author.toLowerCase()
+        let bookTitle = book.title.toLowerCase()
+        let bookAuthor = book.author.toLowerCase()
       
         return ((bookTitle.includes(query)) || (bookAuthor.includes(query))) ? true : false
     })
-
-
 
     return searchResults
 }
@@ -237,74 +203,39 @@ export function searchBooks(event) {
 // -----------------------
 
 
-export function applyUserOptions(sortMethod, filter, library) {
+export function applyUserOptions(updatedLibrary, readFilter, sortMethod, ) {
 
-    //Filter by Read Status if selected
-    if (filter === true) {
-        library = library.filter( (book) => {
-            return book[1].read === true
-        })
-    }
+    if (readFilter === 'read')
+        updatedLibrary = updatedLibrary.filter( book => book.read === true )
     
-    //Filter by Unread Status if selected
-    if (filter === false) {
-        library = library.filter( (book) => {
-            return book[1].read === false
-        })
-    }
+    if (readFilter === 'unread')
+        updatedLibrary = updatedLibrary.filter( book => book.read === false )
 
-
-    switch(sortMethod) {
-
+    switch (sortMethod) {
         case 'newToOld':
         case 'oldToNew':
-            library.sort((a, b) => {
-                if (a[1].date === b[1].date) {
-                    return 0
-                } else {
-                    return (a[1].date < b[1].date) ? -1 : 1
-                }
+            updatedLibrary.sort((a, b) => {
+                if (a.date === b.date) { return 0 }
+                else { return (a.date < b.date) ? -1 : 1 }
             })
             break;
-        
         case 'title':
-            library.sort((a, b) => {
-                if (a[1].title.toLowerCase() === b[1].title.toLowerCase()) {
-                    return 0
-                } else {
-                    return (a[1].title.toLowerCase() < b[1].title.toLowerCase()) ? -1 : 1
-                }
+            updatedLibrary.sort((a, b) => {
+                if (a.title.toLowerCase() === b.title.toLowerCase()) { return 0 }
+                else { return (a.title.toLowerCase() < b.title.toLowerCase()) ? -1 : 1 }
             })
             break;
-        
         case 'author':
-            library.sort((a, b) => {
-                if (a[1].author.toLowerCase() === b[1].author.toLowerCase()) {
-                    return 0
-                } else {
-                    return (a[1].author.toLowerCase() < b[1].author.toLowerCase()) ? -1 : 1
-                }
+            updatedLibrary.sort((a, b) => {
+                if (a.author.toLowerCase() === b.author.toLowerCase()) { return 0 }
+                else { return (a.author.toLowerCase() < b.author.toLowerCase()) ? -1 : 1 }
             })
             break;
         default:
     }
+    if (sortMethod === 'newToOld') updatedLibrary.reverse()
 
-    
-    if (sortMethod === 'newToOld') {
-        library.reverse()
-    }
-
-
-    return library
+    return updatedLibrary
     
 }
 
-
-
-
-// DEV FUNCTIONS
-// -----------------------
-// 
-// Nothing to see here...
-//
-// -----------------------
