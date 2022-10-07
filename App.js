@@ -1,128 +1,150 @@
+// TODO
+// make table view mobile responsive
 
-import { useState, useMemo } from 'react';
-import debounce from 'lodash.debounce'
-import { checkUserSettings, applyUserOptions, addBook, searchBooks, libraryHasBooks } from './js/utils.js'
 
+// Dependencies
+import { useState, useEffect } from 'react';
+import { 
+    applyUserOptions, 
+    checkUserSettings,
+    getLibrary,
+    updateLibrary,
+    getViewMethod,
+    updateViewMethod, 
+    getSortMethod,
+    updateSortMethod,
+    getReadFilter,
+    updateReadFilter
+} from './js/utils.js'
+
+// Components
+import NavBar from './js/NavBar'
+import Logo from './js/Logo'
+import Menu from './js/Menu.js';
+import UserSettings from './js/UserSettings.js';
+import AddBookForm from './js/AddBookForm.js';
+import SearchForm from './js/SearchForm.js';
 import Book from './js/Book'
-import BookInfo from './js/BookInfo'
+import BookInfoModal from './js/BookInfoModal'
 import AddBookMsg from './js/AddBookMsg'
 import LibraryEmptyMsg from './js/LibraryEmptyMsg';
+import NoBooksFoundMsg from './js/NoBooksFoundMsg'
 
-
+// CSS/Media
 import './css/App.css';
-import * as IMG from './img'
+
+
+
 
 
 function App() {
 
   // ---------- ---------- ---------- ----------
-  //App Setup
+  // Initialize App
+  // - Set Document Title 
+  // - Check LocalStorage if library/settings are set
   // ---------- ---------- ---------- ----------
 
-  document.title = 'BookStack Web App'
+  useEffect( () => {
+      document.title = 'BookStack Web App'
+  }, [])
   
   checkUserSettings()
 
 
 
-  // ---------- ---------- ---------- ----------
-  //State Setup
-  // ---------- ---------- ---------- ----------
+  // Stores Active Menu Item
+  const [activeMenuItem, setActiveMenuItem] = useState(false) // String or False (settings, add, search, false)
 
 
 
+  // Stores Method of viewing book library 
+  const [viewMethod, setViewMethod] = useState( getViewMethod() )  // String (table, grid)
+  // -Update Localstorage on change
+   useEffect( () => {
+    updateViewMethod(viewMethod)
+   }, [viewMethod])
 
-  const [viewMethod, setViewMethod] = useState(localStorage.viewMethod)  
-  function toggleViewMethod(method) { 
-    setViewMethod(method)
-    localStorage.setItem('viewMethod', method)
-  }
 
 
-  const [sortMethod, setSortMethod] = useState(localStorage.sortMethod)
-  function toggleSortMethod(method) { 
-    setSortMethod(method) 
-    localStorage.setItem('sortMethod', method)
-  }
+  // Stores method of Sorting book Library
+  const [sortMethod, setSortMethod] = useState( getSortMethod() ) // String (title, author, newToOld, oldToNew)
   
+  // -Update Localstorage on change
+  useEffect( () => {
+    updateSortMethod(sortMethod)
+  }, [sortMethod])
+
  
+
+  // Stores method of Filtering book library 
+  const [readFilter, setReadFilter] = useState( getReadFilter() ) // String (all, read, unread)
+  
+  // - Update Localstorage on change
+  useEffect( () => {
+    updateReadFilter(readFilter)
+  })
+
+
+
+  // Stores search Results
+  const [searchResults, setSearchResults] = useState(false)
+
+
+
+  // Stores ISBN of current book in Book Info Modal
+  const [bookInfoModalISBN, setBookInfoModalISBN] = useState(false) // Number OR False (isbn, false)
+
+
+
+  // Stores Book Data from google books API
+  const [bookInfoModalData, setBookInfoModalData] = useState(false) // Object OR False
+
+
+
+  // If a new Book was recently added, store Book Data, Else store false
+  const [newBookAdded, setNewBookAdded] = useState(false) // Object OR False
+
  
-  let readStatus = 'all'
-  if (localStorage.readFilter === 'true') readStatus = true
-  if (localStorage.readFilter === 'false') readStatus = false
 
-  const [readFilter, setReadFilter] = useState(readStatus)
-  function toggleReadFilter(filter) { 
-    setReadFilter(filter) 
-    localStorage.setItem('readFilter', filter)
-  }
+  // - Stores list of all books and data in library
+  // * Interacts with Local Storage, not UI
+  // * We do not want UI changes (filter/sort) to update Local Storage!
+  const [library, setLibrary] = useState( getLibrary() ) // Array of Objects
 
-
-
-  const [popupBook, setPopupBook] = useState(false) 
-  const [currentPopupBook, setCurrentPopupBook] = useState(false) 
-
-
-  const [newBookAdded, setNewBookAdded] = useState(false)
+  // Update local storage on change
+  useEffect( () => {
+    updateLibrary(library)
+  }, [library])
 
 
   
-
-  const getLocalStorageBookStack = Object.entries(
-    JSON.parse(localStorage.bookstack)
-  )
-
-  let [library, setLibrary] = useState(getLocalStorageBookStack)
-  library = applyUserOptions(sortMethod, readFilter, library)
-
-
-  let totalPages = 0
-
-  library.forEach( (book) => {
-        totalPages += book[1].pages
-  } )
+  // - Stores all books and data in library and is sort/filter-able
+  // * Interacts with UI, not Local Storage
+  // * We do not want UI changes (filter/sort) to update Local Storage!
+  const [uILibrary, setUILibrary] = useState( getLibrary() ) // Array of Objects
   
+  // - Update UI when Library is sorted/filtered/searched
+  useEffect( () => {
+    let updatedLibrary
 
-  // ---------- ---------- ---------- ----------
-  //App main functions
-  // ---------- ---------- ---------- ----------
+    if (searchResults) {
+        updatedLibrary = searchResults
+    } else {
+        updatedLibrary = getLibrary()
+        updatedLibrary = applyUserOptions(updatedLibrary, readFilter, sortMethod)
+    }
 
-  async function handleAddBook() {
+    setUILibrary(updatedLibrary)
 
-    const newBookData = await addBook()
-
-    const updatedLibrary =  Object.entries(
-        JSON.parse(localStorage.bookstack)
-    )
-
-    setLibrary( updatedLibrary )
-    
-    setNewBookAdded(newBookData)
-
-    setTimeout( () => {
-        setNewBookAdded(false)
-    }, 5000)
-
-}
+  }, [readFilter, sortMethod, library, searchResults])
 
 
 
-
-function handleSearch(event) {
-    const searchResults = searchBooks(event, library)
-    
-    setLibrary(searchResults)
-}
-
-
-const debounceHandleSearch = useMemo(
-    //eslint-disable-next-line
-    () => debounce(handleSearch, 500), []
-)
-
-
-
-
+  // Counts total number of pages in the library, just for fun.
+  let totalPagesInLibrary = 0 // Number
+  library.forEach( book => totalPagesInLibrary += book.pages )
+  
 
 
 
@@ -131,159 +153,92 @@ const debounceHandleSearch = useMemo(
   return (
     <>
 
+    <NavBar>
 
-    <nav className="container">
-          
-        <div className="nav-sort">
-            <div className="nav-content">
+        <Logo 
+          key="Logo"
+          title="BookStack" 
+        />
 
-                <div className="logo">
-                    <img src={IMG.logo} alt="Logo" /> 
-                </div>
+        <Menu 
+          activeMenuItem={ activeMenuItem }
+          setActiveMenuItem={ setActiveMenuItem }  
+          setSearchResults={ setSearchResults }
+        />
 
-                <div className="title">
-                    <h1>BookStack</h1>
-                </div>
+    </NavBar>
 
-                <div className='nav-section'>
+    <div className='position-relative'>
 
-                    <button>
-                        View: { viewMethod }
-                    </button>
+    { 
+    activeMenuItem === 'settings' &&
+        <UserSettings 
+            viewMethod={ viewMethod }
+            sortMethod={ sortMethod }
+            readFilter={ readFilter }
+            setViewMethod={ setViewMethod }
+            setSortMethod={ setSortMethod }
+            setReadFilter={ setReadFilter }
+            setActiveMenuItem={ setActiveMenuItem }
+            />
+    }
 
-                    <div className='nav-section-group view-group'>
-
-                        <button className='action-button' onClick={ () => toggleViewMethod('grid')} >
-                            <img src={IMG.gridIcon} alt="Grid" /> Grid
-                        </button>
-
-                        <button className='action-button' onClick={ () => toggleViewMethod('table')} >
-                            <img src={IMG.tableIcon} alt="Table" /> Table
-                        </button>
-
-                    </div>
-
-                </div>
-
-                <div className='nav-section'>
-
-                    <button>
-                        Sort: {sortMethod}
-                    </button>
-
-                    <div className='nav-section-group sort-group'>
-                        
-                        <button className='action-button' onClick={ () => toggleSortMethod('author')}>
-                            <img src={IMG.authorIcon} alt="Author" /> Author
-                        </button>
-
-                        <button className='action-button' onClick={ () => toggleSortMethod('title')}>
-                            <img src={IMG.titleIcon} alt="Title" /> Title
-                        </button>
-
-                        <button className='action-button' onClick={ () => toggleSortMethod('newToOld')}>
-                            <img src={IMG.newtoOldIcon} alt="New to  Old" /> Newest to Oldest
-                        </button>
-
-                        <button className='action-button' onClick={ () => toggleSortMethod('oldToNew')}>
-                            <img src={IMG.oldtonewIcon} alt="" /> Oldest to Newest
-                        </button>
-                    </div>
-                </div>
-
-                <div className='nav-section'>
-
-                    <button>
-                        Filter: 
-                        { readFilter === 'all' && ' All' }
-                        { readFilter === true && ' Read' }
-                        { readFilter === false && ' Unread' }
-                    </button>
-
-                    <div className='nav-section-group filter-group'>
-
-                        <button className='action-button' onClick={ () => toggleReadFilter('all') }>
-                            <img src={IMG.allIcon} alt="All" /> All
-                        </button>
-                        
-                        <button className='action-button' onClick={ () => toggleReadFilter(true) }>
-                            <img src={IMG.readIcon} alt="Read" /> Read Books
-                        </button>
-
-                        <button className='action-button' onClick={ () => toggleReadFilter(false) }>
-                            <img src={IMG.unreadIcon} alt="Unread" /> Unread Books
-                        </button>
-                    </div>
-
-                </div>
-            </div>
-
-        </div>
-
-        <div className="nav-actions">
+        
+    { 
+    activeMenuItem === 'add' &&
+        <AddBookForm 
+            library={ library }
+            setLibrary={ setLibrary }
+            setNewBookAdded={ setNewBookAdded }
+            setActiveMenuItem={ setActiveMenuItem }
+        />
+    }
 
 
-            <form onSubmit={ handleAddBook } >
+    { 
+    activeMenuItem === 'search' &&
+        <SearchForm 
+            library={ library }
+            setSearchResults={ setSearchResults }
+            setActiveMenuItem={ setActiveMenuItem }
+        />
+    }
 
-                <div className='nav-actions-item'>
-                    <label>
-                        Book ISBN: &nbsp;
-                        <input type="text" name="newbook" />
-                    </label>
-                    <label>
-                        Read? &nbsp;
-                        <select>
-                            <option value="true">Yes</option>
-                            <option value="false">No</option>
-                        </select>
-                    </label>
-
-                    <button type="submit" value="Add Book">
-                        <img src={IMG.addIcon} alt="Add" />
-                    </button>
-                </div>
-
-            </form>
-
-
-            <div className='nav-actions-item'>
-                <input type="text" className="search-input" onChange={ debounceHandleSearch } />
-                <button>
-                    <img src={IMG.searchIcon} alt="Search" />
-                </button>
-
-            </div>
-        </div>
-    </nav>
-
-
-
+    </div>
 
 
  
-    {/* If Library is empty, Display Library Empty Message. Else display library */}
+    {/* If Local Storage Library is empty, Display Library Empty Message. */}
 
-    { !libraryHasBooks(library) && <LibraryEmptyMsg /> }
+    { 
+    library.length === 0 && <LibraryEmptyMsg /> 
+    }
 
 
-    { libraryHasBooks(library) &&
+    {/* If UI Local Storage is Empty, Display No Books Found Message */}
+
+    {
+    (uILibrary.length === 0) && (library.length !== 0) && <NoBooksFoundMsg />
+    }
+
+    { 
+    uILibrary &&
 
         <>
-
         { viewMethod === 'grid' && 
         
             <div className='library-grid container'>
-                { library.map( (book, index) => (
+                { uILibrary.map( (book, index) => (
                     <Book
                         bookData={ book }
 
                         key={ index }
                         display={ viewMethod }
-                        readStatus={  ( book[1].read === true ) ? 'Yes' : 'No' }
 
+                        library={ library }
                         setLibrary={ setLibrary }
-                        setPopupBook={ setPopupBook }
-                        setCurrentPopupBook={ setCurrentPopupBook }
+                        setBookInfoModalISBN={ setBookInfoModalISBN }
+                        setBookInfoModalData={ setBookInfoModalData }
                     />
                 )) } 
             </div>
@@ -306,17 +261,18 @@ const debounceHandleSearch = useMemo(
                 </thead>
 
                 <tbody>
-                    { library.map( (book, index) => (
+                    { uILibrary.map( (book, index) => (
                         <Book
                             bookData={ book }
 
                             key={ index }
                             display={ viewMethod }
-                            readStatus={  ( book[1].read === true ) ? 'Yes' : 'No' }
+                            readStatus={  ( book.read === 'read' ) ? 'Yes' : 'No' }
 
+                            library={ library }
                             setLibrary={ setLibrary }
-                            setPopupBook={ setPopupBook }
-                            setCurrentPopupBook={ setCurrentPopupBook }
+                            setBookInfoModalISBN={ setBookInfoModalISBN }
+                            setBookInfoModalData={ setBookInfoModalData }
                         />
                     )) } 
 
@@ -338,7 +294,7 @@ const debounceHandleSearch = useMemo(
 
 
     <footer className='container'>
-        You have { totalPages } total pages in your library<br />
+        You have { totalPagesInLibrary } total pages in your library<br />
         Made By Josh =) with React
     </footer>
 
@@ -355,13 +311,13 @@ const debounceHandleSearch = useMemo(
 
     {/* More Info Popup */}
 
-    { currentPopupBook &&
+    { bookInfoModalData &&
 
-    <BookInfo 
-        popupBook={ popupBook }
-        setPopupBook={ setPopupBook }
-        currentPopupBook={ currentPopupBook }
-        setCurrentPopupBook={ setCurrentPopupBook }
+    <BookInfoModal 
+        bookInfoModalISBN={ bookInfoModalISBN }
+        setBookInfoModalISBN={ setBookInfoModalISBN }
+        bookInfoModalData={ bookInfoModalData }
+        setBookInfoModalData={ setBookInfoModalData }
       />
 
        
